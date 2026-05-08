@@ -25,6 +25,14 @@ from app.schemas.tracking import DriverLocationCreate, DriverLocationRead, Drive
 class OperationsService:
     """Database-backed operations service for municipal workflows."""
 
+    @staticmethod
+    def _extract_area(address: object) -> str:
+        normalized = str(address or "").strip()
+        if not normalized:
+            return "Unknown"
+        first_segment = normalized.split(",", maxsplit=1)[0].strip()
+        return first_segment or "Unknown"
+
     async def create_pickup(self, session: AsyncSession, payload: PickupRequestCreate) -> PickupRequestRead:
         await self._ensure_user_exists(session, payload.user_id)
         pickup = PickupRequest(
@@ -203,7 +211,7 @@ class OperationsService:
         ]
         completed = int((pickup_frame["status"] == PickupStatus.COMPLETED.value).sum())
         total = max(len(pickup_records), 1)
-        area_series = pickup_frame["address"].fillna("Unknown").map(lambda value: str(value).split(",")[0].strip() or "Unknown")
+        area_series = pickup_frame["address"].map(self._extract_area)
         area_frame = area_series.value_counts().head(5)
         complaint_counts = complaint_frame.groupby("status").size()
         recycling_points = float(

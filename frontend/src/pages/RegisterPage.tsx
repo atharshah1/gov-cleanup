@@ -149,14 +149,16 @@ export function RegisterPage() {
             <input className="mt-2 block w-full text-sm font-normal" type="file" accept=".pdf,image/*" onChange={handleFileChange} />
             <span className="mt-2 block text-xs font-normal text-slate-500">{billFile ? billFile.name : billPath ? `Uploaded: ${billPath}` : 'PDF or image proof accepted.'}</span>
           </label>
-          <div className="sm:col-span-2 grid gap-3 md:grid-cols-[1fr_auto_auto]">
-            <input className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="Enter OTP" value={otpCode} onChange={(event) => setOtpCode(event.target.value)} />
-            <button className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white" type="button" onClick={handleRequestOtp} disabled={!form.phone || isBusy}>
-              Request OTP
-            </button>
-            <button className="rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white" type="button" onClick={handleVerifyOtp} disabled={!otpCode || isBusy || !otpResponse}>
-              Verify OTP
-            </button>
+          <div className="sm:col-span-2">
+            <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
+              <input className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="Enter OTP" value={otpCode} onChange={(event) => setOtpCode(event.target.value)} />
+              <button className="rounded-2xl bg-emerald-600 px-5 py-3 font-bold text-white" type="button" onClick={handleRequestOtp} disabled={!form.phone || isBusy}>
+                Request OTP
+              </button>
+              <button className="rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white" type="button" onClick={handleVerifyOtp} disabled={!otpCode || isBusy || !otpResponse}>
+                Verify OTP
+              </button>
+            </div>
           </div>
           <button className="rounded-2xl bg-cyan-600 px-5 py-3 font-bold text-white sm:col-span-2 disabled:opacity-60" type="submit" disabled={!canRegister}>
             Complete registration

@@ -30,7 +30,10 @@ class OTPService:
         self.ttl_seconds = ttl_seconds
         self._random = SystemRandom()
         self._client = None
-        if settings.twilio_account_sid and settings.twilio_auth_token:
+        if all(
+            value and value.strip()
+            for value in (settings.twilio_account_sid, settings.twilio_auth_token, settings.twilio_from_phone)
+        ):
             self._client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
 
     async def create_code(self, session: AsyncSession, phone: str) -> OTPRecord:
