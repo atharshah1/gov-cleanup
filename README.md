@@ -11,9 +11,9 @@ The platform is designed to support verified household onboarding, OTP-based reg
 - **Frontend:** React, Vite, TypeScript, TailwindCSS, React Router, Zustand, React Query, Axios, Framer Motion, Recharts
 - **Backend:** FastAPI, SQLAlchemy, Alembic, Pydantic, JWT authentication, async APIs
 - **Database:** PostgreSQL
-- **Maps:** Google Maps API or Leaflet with OpenStreetMap
-- **Notifications:** Twilio SMS and email-ready service boundaries
-- **Analytics:** Pandas-ready backend analytics modules
+- **Maps:** Leaflet with OpenStreetMap tiles for real pickup and driver tracking
+- **Notifications:** Twilio SMS integration for OTP delivery
+- **Analytics:** Pandas-powered backend analytics summary and CSV export
 
 ## Environment Variables
 
@@ -25,6 +25,11 @@ ENVIRONMENT="local"
 DATABASE_URL="postgresql+asyncpg://ecosync:ecosync@localhost:5432/ecosync"
 JWT_SECRET_KEY="replace-with-a-secure-secret"
 FRONTEND_ORIGIN="http://localhost:5173"
+UPLOAD_DIR="backend/uploads"
+MAX_UPLOAD_SIZE_MB="10"
+TWILIO_ACCOUNT_SID=""
+TWILIO_AUTH_TOKEN=""
+TWILIO_FROM_PHONE=""
 ```
 
 ## Frontend Setup
@@ -32,6 +37,7 @@ FRONTEND_ORIGIN="http://localhost:5173"
 ```bash
 cd frontend
 npm install
+npm run lint
 npm run dev
 ```
 
@@ -57,7 +63,15 @@ The API runs on <http://localhost:8000> by default.
 2. Configure `DATABASE_URL` in `backend/.env`.
 3. Run Alembic migrations from the `backend` directory.
 
-The initial planned schema includes `users`, `pickup_requests`, `complaints`, `rewards`, `drivers`, and `notifications`.
+The schema includes `users`, `pickup_requests`, `complaints`, `rewards`, `drivers`, `notifications`, `otp_challenges`, and `driver_locations`.
+
+## Integrated Feature Notes
+
+- **Database persistence:** auth, pickups, complaints, rewards, notifications, OTPs, and live tracking events are persisted with SQLAlchemy and PostgreSQL.
+- **Live tracking:** driver location updates are available through REST endpoints and `/api/v1/tracking/pickups/{pickup_id}/ws`.
+- **Maps:** the frontend dashboards render OpenStreetMap maps with Leaflet for pickup destinations and live driver positions.
+- **Uploads:** electricity bills can be uploaded through `/api/v1/uploads/electricity-bills` and are served from `/uploads/...`.
+- **Analytics:** `/api/v1/analytics/summary` returns aggregated metrics and `/api/v1/analytics/export.csv` exports persisted pickup data.
 
 ## API Documentation
 

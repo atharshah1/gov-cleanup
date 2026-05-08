@@ -21,3 +21,4 @@ class Driver(TimestampMixin, Base):
 
     user = relationship("User", back_populates="driver_profile")
     pickup_requests = relationship("PickupRequest", back_populates="driver")
+    location_updates = relationship("DriverLocation", back_populates="driver")

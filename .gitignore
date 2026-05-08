@@ -9,6 +9,7 @@ dist/
 build/
 .coverage/
 htmlcov/
+*.tsbuildinfo
 
 # Environment and local files
 .env

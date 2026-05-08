@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AnyHttpUrl, Field
@@ -18,6 +19,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     frontend_origin: AnyHttpUrl | str = "http://localhost:5173"
+    upload_dir: str = str((Path(__file__).resolve().parents[2] / "uploads").resolve())
+    max_upload_size_mb: int = 10
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_from_phone: str | None = None
 
 
 @lru_cache

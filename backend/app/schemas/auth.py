@@ -11,6 +11,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     address: str = Field(min_length=5)
     role: UserRole = UserRole.CITIZEN
+    vehicle_number: str | None = Field(default=None, max_length=40)
     electricity_bill_path: str | None = Field(default=None, max_length=512)
 
 
