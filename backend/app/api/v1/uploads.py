@@ -9,6 +9,7 @@ from app.schemas.upload import UploadResponse
 settings = get_settings()
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 ALLOWED_CONTENT_TYPES = {"application/pdf", "image/jpeg", "image/png", "image/webp"}
+BYTES_PER_MB = 1024 * 1024
 
 
 @router.post("/electricity-bills", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
@@ -23,7 +24,7 @@ async def upload_electricity_bill(file: UploadFile = File(...)) -> UploadRespons
     destination = destination_dir / stored_name
 
     content = await file.read()
-    if len(content) > settings.max_upload_size_mb * 1024 * 1024:
+    if len(content) > settings.max_upload_size_mb * BYTES_PER_MB:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file exceeds the configured size limit")
     destination.write_bytes(content)
 

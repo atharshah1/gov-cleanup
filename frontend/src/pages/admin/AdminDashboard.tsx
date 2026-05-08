@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart3, CircleAlert, Download, Truck, UsersRound } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -54,14 +54,15 @@ export function AdminDashboard() {
   });
 
   const analytics = analyticsQuery.data;
-  const pickups = pickupsQuery.data ?? [];
+  const pickups = useMemo(() => pickupsQuery.data ?? [], [pickupsQuery.data]);
   const drivers = driversQuery.data ?? [];
   const unassignedPickups = pickups.filter((pickup) => pickup.driver_id === null);
+  const uniqueUserCount = useMemo(() => new Set(pickups.map((pickup) => pickup.user_id)).size, [pickups]);
 
   return (
     <section className="grid gap-6">
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Verified users" value={String(new Set(pickups.map((pickup) => pickup.user_id)).size)} icon={UsersRound} />
+        <StatCard label="Verified users" value={String(uniqueUserCount)} icon={UsersRound} />
         <StatCard label="Active drivers" value={String(drivers.filter((driver) => driver.availability === 'on_route').length)} icon={Truck} tone="blue" />
         <StatCard label="Open complaints" value={String(analytics?.complaint_trends.find((item) => item.label === 'open')?.value ?? 0)} icon={CircleAlert} tone="rose" />
         <StatCard label="Pickup efficiency" value={`${analytics?.pickup_efficiency.value ?? 0}%`} icon={BarChart3} tone="amber" />

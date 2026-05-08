@@ -33,6 +33,20 @@ class OperationsService:
         first_segment = normalized.split(",", maxsplit=1)[0].strip()
         return first_segment or "Unknown"
 
+    @staticmethod
+    def _create_empty_pickup_frame() -> pd.DataFrame:
+        return pd.DataFrame(
+            [
+                {
+                    "id": 0,
+                    "waste_type": waste.value,
+                    "status": PickupStatus.PENDING.value,
+                    "address": "Unknown",
+                }
+                for waste in WasteType
+            ]
+        )
+
     async def create_pickup(self, session: AsyncSession, payload: PickupRequestCreate) -> PickupRequestRead:
         await self._ensure_user_exists(session, payload.user_id)
         pickup = PickupRequest(
@@ -196,7 +210,7 @@ class OperationsService:
         rewards = [row[0] for row in reward_rows.all()]
         complaints = [row[0] for row in complaint_rows.all()]
 
-        pickup_frame = pd.DataFrame(pickup_records or [{"id": 0, "waste_type": waste.value, "status": PickupStatus.PENDING.value, "address": "Unknown"} for waste in WasteType])
+        pickup_frame = pd.DataFrame(pickup_records) if pickup_records else self._create_empty_pickup_frame()
         complaint_frame = pd.DataFrame(
             [{"status": item.status.value} for item in complaints] or [{"status": ComplaintStatus.OPEN.value}]
         )
