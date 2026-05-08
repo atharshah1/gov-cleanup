@@ -13,7 +13,6 @@ from app.core.security import hash_password, verify_password
 from app.models.otp_challenge import OTPChallenge
 
 settings = get_settings()
-OTP_MESSAGE_TEMPLATE = "Your EcoSync verification code is {code}. It expires in {minutes} minutes."
 
 
 @dataclass(slots=True)
@@ -26,6 +25,8 @@ class OTPRecord:
 
 class OTPService:
     """Database-backed OTP service with optional Twilio SMS delivery."""
+
+    OTP_MESSAGE_TEMPLATE = "Your EcoSync verification code is {code}. It expires in {minutes} minutes."
 
     def __init__(self, ttl_seconds: int = 300) -> None:
         self.ttl_seconds = ttl_seconds
@@ -47,7 +48,7 @@ class OTPService:
             try:
                 message = await asyncio.to_thread(
                     self._client.messages.create,
-                    body=OTP_MESSAGE_TEMPLATE.format(code=code, minutes=self.ttl_seconds // 60),
+                    body=self.OTP_MESSAGE_TEMPLATE.format(code=code, minutes=self.ttl_seconds // 60),
                     from_=settings.twilio_from_phone,
                     to=phone,
                 )

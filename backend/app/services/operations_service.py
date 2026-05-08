@@ -38,7 +38,7 @@ class OperationsService:
         return pd.DataFrame(
             [
                 {
-                    "id": 0,
+                    "id": -1,
                     "waste_type": waste.value,
                     "status": PickupStatus.PENDING.value,
                     "address": "Unknown",

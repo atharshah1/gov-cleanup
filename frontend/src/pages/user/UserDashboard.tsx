@@ -9,7 +9,7 @@ import { api, buildTrackingSocketUrl } from '../../lib/api';
 import type { Complaint, Coordinates, DriverLocation, Pickup, PickupStatus, Reward, WasteType } from '../../lib/types';
 import { useSessionStore } from '../../store/session';
 
-const ACTIVE_PICKUP_STATUSES: PickupStatus[] = ['assigned', 'in_progress'];
+const activePickupStatuses: PickupStatus[] = ['assigned', 'in_progress'];
 
 const initialSchedule = {
   waste_type: 'wet' as WasteType,
@@ -54,7 +54,7 @@ export function UserDashboard() {
   });
 
   const activePickup = useMemo(
-    () => pickupsQuery.data?.find((pickup) => ACTIVE_PICKUP_STATUSES.includes(pickup.status)) ?? pickupsQuery.data?.[0],
+    () => pickupsQuery.data?.find((pickup) => activePickupStatuses.includes(pickup.status)) ?? pickupsQuery.data?.[0],
     [pickupsQuery.data]
   );
   const activePickupId = activePickup?.id;
