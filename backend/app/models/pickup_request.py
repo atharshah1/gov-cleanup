@@ -33,3 +33,4 @@ class PickupRequest(TimestampMixin, Base):
 
     user = relationship("User", back_populates="pickup_requests", foreign_keys=[user_id])
     driver = relationship("Driver", back_populates="pickup_requests", foreign_keys=[driver_id])
+    location_updates = relationship("DriverLocation", back_populates="pickup", cascade="all, delete-orphan")

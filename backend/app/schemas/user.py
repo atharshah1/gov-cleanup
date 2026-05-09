@@ -16,6 +16,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=128)
     electricity_bill_path: str | None = None
+    vehicle_number: str | None = None
 
 
 class UserUpdate(BaseModel):
@@ -32,6 +33,8 @@ class UserRead(UserBase):
     verified: bool
     household_id: str | None
     electricity_bill_path: str | None
+    driver_id: int | None = None
+    vehicle_number: str | None = None
     created_at: datetime
     updated_at: datetime
 
