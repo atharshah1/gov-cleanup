@@ -1,10 +1,9 @@
-import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from random import SystemRandom
 
 from sqlalchemy import desc, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from twilio.base.exceptions import TwilioException
 from twilio.rest import Client
 
@@ -38,7 +37,7 @@ class OTPService:
         ):
             self._client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
 
-    async def create_code(self, session: AsyncSession, phone: str) -> OTPRecord:
+    def create_code(self, session: Session, phone: str) -> OTPRecord:
         code = f"{self._random.randrange(100000, 999999)}"
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=self.ttl_seconds)
         delivery_channel = "sms"
@@ -46,8 +45,7 @@ class OTPService:
 
         if self._client and settings.twilio_from_phone:
             try:
-                message = await asyncio.to_thread(
-                    self._client.messages.create,
+                message = self._client.messages.create(
                     body=self.OTP_MESSAGE_TEMPLATE.format(code=code, minutes=self.ttl_seconds // 60),
                     from_=settings.twilio_from_phone,
                     to=phone,
@@ -66,7 +64,7 @@ class OTPService:
             delivery_reference=delivery_reference,
         )
         session.add(challenge)
-        await session.flush()
+        session.flush()
         return OTPRecord(
             code=code,
             expires_at=expires_at,
@@ -74,8 +72,8 @@ class OTPService:
             delivery_reference=delivery_reference,
         )
 
-    async def verify_code(self, session: AsyncSession, phone: str, code: str) -> bool:
-        record = await session.scalar(
+    def verify_code(self, session: Session, phone: str, code: str) -> bool:
+        record = session.scalar(
             select(OTPChallenge).where(OTPChallenge.phone == phone).order_by(desc(OTPChallenge.created_at)).limit(1)
         )
         if record is None or record.verified or record.expires_at < datetime.now(timezone.utc):
@@ -83,11 +81,11 @@ class OTPService:
         if not verify_password(code, record.code_hash):
             return False
         record.verified = True
-        await session.flush()
+        session.flush()
         return True
 
-    async def is_verified(self, session: AsyncSession, phone: str) -> bool:
-        record = await session.scalar(
+    def is_verified(self, session: Session, phone: str) -> bool:
+        record = session.scalar(
             select(OTPChallenge).where(OTPChallenge.phone == phone).order_by(desc(OTPChallenge.created_at)).limit(1)
         )
         return bool(record and record.verified)

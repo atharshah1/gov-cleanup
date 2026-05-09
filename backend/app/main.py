@@ -28,7 +28,7 @@ app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads"
 
 
 @app.get("/health", tags=["system"])
-async def health_check() -> dict[str, str]:
+def health_check() -> dict[str, str]:
     """Basic health check used by deployment platforms."""
 
     return {"status": "ok", "service": "ecosync-api"}

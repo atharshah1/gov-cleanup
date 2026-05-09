@@ -4,7 +4,7 @@ import pandas as pd
 from fastapi import HTTPException, status
 from sqlalchemy import Select, desc, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from app.models.complaint import Complaint
 from app.models.driver import Driver
@@ -47,8 +47,8 @@ class OperationsService:
             ]
         )
 
-    async def create_pickup(self, session: AsyncSession, payload: PickupRequestCreate) -> PickupRequestRead:
-        await self._ensure_user_exists(session, payload.user_id)
+    def create_pickup(self, session: Session, payload: PickupRequestCreate) -> PickupRequestRead:
+        self._ensure_user_exists(session, payload.user_id)
         pickup = PickupRequest(
             user_id=payload.user_id,
             waste_type=payload.waste_type,
@@ -58,7 +58,7 @@ class OperationsService:
             notes=payload.notes,
             status=PickupStatus.PENDING,
         )
-        available_driver = await session.scalar(
+        available_driver = session.scalar(
             select(Driver).where(Driver.availability == DriverAvailability.AVAILABLE).order_by(Driver.id).limit(1)
         )
         if available_driver is not None:
@@ -67,113 +67,113 @@ class OperationsService:
             available_driver.availability = DriverAvailability.ON_ROUTE
         session.add(pickup)
         try:
-            await session.commit()
+            session.commit()
         except IntegrityError as exc:
-            await session.rollback()
+            session.rollback()
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Duplicate pickup already exists for this date and waste type") from exc
-        return await self._load_pickup(session, pickup.id)
+        return self._load_pickup(session, pickup.id)
 
-    async def assign_pickup(self, session: AsyncSession, pickup_id: int, payload: PickupAssignment) -> PickupRequestRead:
-        pickup = await self._get_pickup_entity(session, pickup_id)
-        driver = await session.scalar(select(Driver).where(Driver.id == payload.driver_id))
+    def assign_pickup(self, session: Session, pickup_id: int, payload: PickupAssignment) -> PickupRequestRead:
+        pickup = self._get_pickup_entity(session, pickup_id)
+        driver = session.scalar(select(Driver).where(Driver.id == payload.driver_id))
         if driver is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Driver not found")
         pickup.driver_id = payload.driver_id
         pickup.status = PickupStatus.ASSIGNED
         driver.availability = DriverAvailability.ON_ROUTE
-        await session.commit()
-        return await self._load_pickup(session, pickup_id)
+        session.commit()
+        return self._load_pickup(session, pickup_id)
 
-    async def update_pickup_status(self, session: AsyncSession, pickup_id: int, payload: PickupStatusUpdate) -> PickupRequestRead:
-        pickup = await self._get_pickup_entity(session, pickup_id)
+    def update_pickup_status(self, session: Session, pickup_id: int, payload: PickupStatusUpdate) -> PickupRequestRead:
+        pickup = self._get_pickup_entity(session, pickup_id)
         pickup.status = payload.status
         pickup.notes = payload.notes or pickup.notes
         if pickup.driver_id is not None:
-            driver = await session.scalar(select(Driver).where(Driver.id == pickup.driver_id))
+            driver = session.scalar(select(Driver).where(Driver.id == pickup.driver_id))
             if driver is not None and payload.status in {PickupStatus.COMPLETED, PickupStatus.CANCELLED}:
                 driver.availability = DriverAvailability.AVAILABLE
-        await session.commit()
-        return await self._load_pickup(session, pickup_id)
+        session.commit()
+        return self._load_pickup(session, pickup_id)
 
-    async def list_pickups(self, session: AsyncSession, user_id: int | None = None, driver_id: int | None = None) -> list[PickupRequestRead]:
+    def list_pickups(self, session: Session, user_id: int | None = None, driver_id: int | None = None) -> list[PickupRequestRead]:
         query: Select[tuple[PickupRequest]] = select(PickupRequest).order_by(desc(PickupRequest.created_at))
         if user_id is not None:
             query = query.where(PickupRequest.user_id == user_id)
         if driver_id is not None:
             query = query.where(PickupRequest.driver_id == driver_id)
-        result = await session.scalars(query)
+        result = session.scalars(query)
         return [PickupRequestRead.model_validate(item) for item in result.all()]
 
-    async def create_complaint(self, session: AsyncSession, payload: ComplaintCreate) -> ComplaintRead:
-        await self._ensure_user_exists(session, payload.user_id)
+    def create_complaint(self, session: Session, payload: ComplaintCreate) -> ComplaintRead:
+        self._ensure_user_exists(session, payload.user_id)
         complaint = Complaint(**payload.model_dump())
         session.add(complaint)
-        await session.commit()
-        await session.refresh(complaint)
+        session.commit()
+        session.refresh(complaint)
         return ComplaintRead.model_validate(complaint)
 
-    async def update_complaint_status(self, session: AsyncSession, complaint_id: int, payload: ComplaintStatusUpdate) -> ComplaintRead:
-        complaint = await session.scalar(select(Complaint).where(Complaint.id == complaint_id))
+    def update_complaint_status(self, session: Session, complaint_id: int, payload: ComplaintStatusUpdate) -> ComplaintRead:
+        complaint = session.scalar(select(Complaint).where(Complaint.id == complaint_id))
         if complaint is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Complaint not found")
         complaint.status = payload.status
-        await session.commit()
-        await session.refresh(complaint)
+        session.commit()
+        session.refresh(complaint)
         return ComplaintRead.model_validate(complaint)
 
-    async def list_complaints(self, session: AsyncSession, user_id: int | None = None) -> list[ComplaintRead]:
+    def list_complaints(self, session: Session, user_id: int | None = None) -> list[ComplaintRead]:
         query: Select[tuple[Complaint]] = select(Complaint).order_by(desc(Complaint.created_at))
         if user_id is not None:
             query = query.where(Complaint.user_id == user_id)
-        result = await session.scalars(query)
+        result = session.scalars(query)
         return [ComplaintRead.model_validate(item) for item in result.all()]
 
-    async def create_reward(self, session: AsyncSession, payload: RewardCreate) -> RewardRead:
-        await self._ensure_user_exists(session, payload.user_id)
+    def create_reward(self, session: Session, payload: RewardCreate) -> RewardRead:
+        self._ensure_user_exists(session, payload.user_id)
         reward = Reward(**payload.model_dump())
         session.add(reward)
-        await session.commit()
-        await session.refresh(reward)
+        session.commit()
+        session.refresh(reward)
         return RewardRead.model_validate(reward)
 
-    async def redeem_reward(self, session: AsyncSession, reward_id: int, payload: RewardRedeem) -> RewardRead:
-        reward = await session.scalar(select(Reward).where(Reward.id == reward_id))
+    def redeem_reward(self, session: Session, reward_id: int, payload: RewardRedeem) -> RewardRead:
+        reward = session.scalar(select(Reward).where(Reward.id == reward_id))
         if reward is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reward not found")
         reward.redeemed = payload.redeemed
-        await session.commit()
-        await session.refresh(reward)
+        session.commit()
+        session.refresh(reward)
         return RewardRead.model_validate(reward)
 
-    async def list_rewards(self, session: AsyncSession, user_id: int | None = None) -> list[RewardRead]:
+    def list_rewards(self, session: Session, user_id: int | None = None) -> list[RewardRead]:
         query: Select[tuple[Reward]] = select(Reward).order_by(desc(Reward.created_at))
         if user_id is not None:
             query = query.where(Reward.user_id == user_id)
-        result = await session.scalars(query)
+        result = session.scalars(query)
         return [RewardRead.model_validate(item) for item in result.all()]
 
-    async def create_notification(self, session: AsyncSession, payload: NotificationCreate) -> NotificationRead:
-        await self._ensure_user_exists(session, payload.user_id)
+    def create_notification(self, session: Session, payload: NotificationCreate) -> NotificationRead:
+        self._ensure_user_exists(session, payload.user_id)
         notification = Notification(**payload.model_dump())
         session.add(notification)
-        await session.commit()
-        await session.refresh(notification)
+        session.commit()
+        session.refresh(notification)
         return NotificationRead.model_validate(notification)
 
-    async def list_drivers(self, session: AsyncSession) -> list[DriverRead]:
-        result = await session.scalars(select(Driver).order_by(Driver.id))
+    def list_drivers(self, session: Session) -> list[DriverRead]:
+        result = session.scalars(select(Driver).order_by(Driver.id))
         return [DriverRead.model_validate(item) for item in result.all()]
 
-    async def create_location_update(
+    def create_location_update(
         self,
-        session: AsyncSession,
+        session: Session,
         pickup_id: int,
         payload: DriverLocationCreate,
     ) -> DriverLocationRead:
-        pickup = await self._get_pickup_entity(session, pickup_id)
+        pickup = self._get_pickup_entity(session, pickup_id)
         if pickup.driver_id is not None and pickup.driver_id != payload.driver_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Location update driver does not match assigned pickup driver")
-        driver = await session.scalar(select(Driver).where(Driver.id == payload.driver_id))
+        driver = session.scalar(select(Driver).where(Driver.id == payload.driver_id))
         if driver is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Driver not found")
         pickup.driver_id = payload.driver_id
@@ -181,22 +181,22 @@ class OperationsService:
         driver.availability = DriverAvailability.ON_ROUTE if payload.status not in {PickupStatus.COMPLETED, PickupStatus.CANCELLED} else DriverAvailability.AVAILABLE
         location = DriverLocation(pickup_id=pickup_id, **payload.model_dump())
         session.add(location)
-        await session.commit()
-        await session.refresh(location)
+        session.commit()
+        session.refresh(location)
         return DriverLocationRead.model_validate(location)
 
-    async def list_location_updates(self, session: AsyncSession, pickup_id: int) -> list[DriverLocationRead]:
-        result = await session.scalars(
+    def list_location_updates(self, session: Session, pickup_id: int) -> list[DriverLocationRead]:
+        result = session.scalars(
             select(DriverLocation).where(DriverLocation.pickup_id == pickup_id).order_by(DriverLocation.recorded_at)
         )
         return [DriverLocationRead.model_validate(item) for item in result.all()]
 
-    async def analytics_summary(self, session: AsyncSession) -> AnalyticsSummary:
-        pickup_rows = await session.execute(
+    def analytics_summary(self, session: Session) -> AnalyticsSummary:
+        pickup_rows = session.execute(
             select(PickupRequest, User.address).join(User, User.id == PickupRequest.user_id)
         )
-        reward_rows = await session.execute(select(Reward))
-        complaint_rows = await session.execute(select(Complaint))
+        reward_rows = session.execute(select(Reward))
+        complaint_rows = session.execute(select(Complaint))
 
         pickup_records = [
             {
@@ -240,8 +240,8 @@ class OperationsService:
             recycling_participation=EfficiencyMetric(label="recycling_reward_points", value=recycling_points),
         )
 
-    async def analytics_export_csv(self, session: AsyncSession) -> str:
-        rows = await session.execute(
+    def analytics_export_csv(self, session: Session) -> str:
+        rows = session.execute(
             select(PickupRequest, User.address)
             .join(User, User.id == PickupRequest.user_id)
             .order_by(desc(PickupRequest.created_at))
@@ -286,20 +286,20 @@ class OperationsService:
         frame.to_csv(buffer, index=False)
         return buffer.getvalue()
 
-    async def _load_pickup(self, session: AsyncSession, pickup_id: int) -> PickupRequestRead:
-        pickup = await session.scalar(select(PickupRequest).where(PickupRequest.id == pickup_id))
+    def _load_pickup(self, session: Session, pickup_id: int) -> PickupRequestRead:
+        pickup = session.scalar(select(PickupRequest).where(PickupRequest.id == pickup_id))
         if pickup is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pickup not found")
         return PickupRequestRead.model_validate(pickup)
 
-    async def _get_pickup_entity(self, session: AsyncSession, pickup_id: int) -> PickupRequest:
-        pickup = await session.scalar(select(PickupRequest).where(PickupRequest.id == pickup_id))
+    def _get_pickup_entity(self, session: Session, pickup_id: int) -> PickupRequest:
+        pickup = session.scalar(select(PickupRequest).where(PickupRequest.id == pickup_id))
         if pickup is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pickup not found")
         return pickup
 
-    async def _ensure_user_exists(self, session: AsyncSession, user_id: int) -> None:
-        user = await session.scalar(select(User).where(User.id == user_id))
+    def _ensure_user_exists(self, session: Session, user_id: int) -> None:
+        user = session.scalar(select(User).where(User.id == user_id))
         if user is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 

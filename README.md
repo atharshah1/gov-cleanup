@@ -9,7 +9,7 @@ The platform is designed to support verified household onboarding, OTP-based reg
 ## Tech Stack
 
 - **Frontend:** React, Vite, TypeScript, TailwindCSS, React Router, Zustand, React Query, Axios, Framer Motion, Recharts
-- **Backend:** FastAPI, SQLAlchemy, Alembic, Pydantic, JWT authentication, async APIs
+- **Backend:** FastAPI, SQLAlchemy, Alembic, Pydantic, JWT authentication
 - **Database:** PostgreSQL
 - **Maps:** Leaflet with OpenStreetMap tiles for real pickup and driver tracking
 - **Notifications:** Twilio SMS integration for OTP delivery
@@ -22,7 +22,7 @@ Create `backend/.env` before running the API:
 ```env
 APP_NAME="EcoSync API"
 ENVIRONMENT="local"
-DATABASE_URL="postgresql+asyncpg://ecosync:ecosync@localhost:5432/ecosync"
+DATABASE_URL="postgresql://ecosync:ecosync@localhost:5432/ecosync"
 JWT_SECRET_KEY="replace-with-a-secure-secret"
 FRONTEND_ORIGIN="http://localhost:5173"
 UPLOAD_DIR="backend/uploads"
