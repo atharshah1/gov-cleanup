@@ -3,8 +3,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.driver import Driver
@@ -18,15 +17,15 @@ from app.services.otp_service import otp_service
 class AuthService:
     """Authentication service backed by the shared PostgreSQL database."""
 
-    async def register(self, session: AsyncSession, payload: RegisterRequest) -> UserRead:
-        existing_by_phone = await session.scalar(select(User).where(User.phone == payload.phone))
+    def register(self, session: Session, payload: RegisterRequest) -> UserRead:
+        existing_by_phone = session.scalar(select(User).where(User.phone == payload.phone))
         if existing_by_phone is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Phone number is already registered")
         if payload.email:
-            existing_by_email = await session.scalar(select(User).where(User.email == payload.email))
+            existing_by_email = session.scalar(select(User).where(User.email == payload.email))
             if existing_by_email is not None:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered")
-        if not await otp_service.is_verified(session, payload.phone):
+        if not otp_service.is_verified(session, payload.phone):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number must be OTP verified before registration")
         if payload.role == UserRole.DRIVER and not payload.vehicle_number:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Driver registrations require a vehicle number")
@@ -46,7 +45,7 @@ class AuthService:
         )
         session.add(user)
         try:
-            await session.flush()
+            session.flush()
             user.household_id = f"ECO-{now.year}-{user.id:06d}"
             if payload.role == UserRole.DRIVER and payload.vehicle_number:
                 session.add(
@@ -56,30 +55,30 @@ class AuthService:
                         availability=DriverAvailability.AVAILABLE,
                     )
                 )
-            await session.commit()
+            session.commit()
         except IntegrityError as exc:
-            await session.rollback()
+            session.rollback()
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Registration conflicts with an existing record") from exc
 
-        persisted = await session.scalar(select(User).options(selectinload(User.driver_profile)).where(User.id == user.id))
+        persisted = session.scalar(select(User).options(selectinload(User.driver_profile)).where(User.id == user.id))
         if persisted is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to load registered user")
         return self._to_read_model(persisted)
 
-    async def login(self, session: AsyncSession, payload: LoginRequest) -> TokenResponse:
-        user = await session.scalar(select(User).options(selectinload(User.driver_profile)).where(User.phone == payload.phone))
+    def login(self, session: Session, payload: LoginRequest) -> TokenResponse:
+        user = session.scalar(select(User).options(selectinload(User.driver_profile)).where(User.phone == payload.phone))
         if user is None or not verify_password(payload.password, str(user.password_hash)):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid phone or password")
         read_model = self._to_read_model(user)
         token = create_access_token(subject=str(read_model.id), claims={"role": read_model.role.value, "phone": read_model.phone})
         return TokenResponse(access_token=token, user=read_model)
 
-    async def mark_phone_verified(self, session: AsyncSession, phone: str) -> None:
-        user = await session.scalar(select(User).where(User.phone == phone))
+    def mark_phone_verified(self, session: Session, phone: str) -> None:
+        user = session.scalar(select(User).where(User.phone == phone))
         if user is not None:
             user.verified = True
             user.updated_at = datetime.now(timezone.utc)
-            await session.flush()
+            session.flush()
 
     @staticmethod
     def _to_read_model(user: User) -> UserRead:
