@@ -80,6 +80,50 @@ When the backend server is running, FastAPI exposes interactive documentation at
 - Swagger UI: <http://localhost:8000/docs>
 - ReDoc: <http://localhost:8000/redoc>
 
+## Creating Admin, Driver, and Citizen Accounts for Flow Testing
+
+Use the frontend at <http://localhost:5173/register> to create each role, or call the auth endpoints directly from Swagger.
+
+1. Request an OTP for the phone number you want to use.
+2. Verify the OTP for that phone number.
+3. Complete registration with the target role.
+4. Sign in at <http://localhost:5173/login> and confirm you land on the matching dashboard.
+
+### Citizen test account
+
+- Choose the `Citizen` role on the registration page.
+- Fill in name, phone, password, address, and optionally upload an electricity bill.
+- After login, you should land on `/dashboard/user`.
+- Use the citizen dashboard to schedule a pickup and watch live driver tracking after assignment.
+
+### Driver test account
+
+- Choose the `Driver` role on the registration page.
+- Fill in the standard registration fields and provide a `vehicle number` because driver registration requires it.
+- After login, you should land on `/dashboard/driver`.
+- Use the driver dashboard to open an assigned pickup, update status, and send live location updates.
+
+### Admin test account
+
+- Choose the `Admin` role on the registration page.
+- Fill in the standard registration fields and complete OTP verification.
+- After login, you should land on `/dashboard/admin`.
+- Use the admin dashboard to review analytics, view available drivers, and assign citizen pickups to a driver.
+
+### Recommended end-to-end flow check
+
+1. Create and log in with a citizen account, then schedule a pickup.
+2. Create and log in with a driver account.
+3. Create and log in with an admin account.
+4. In the admin dashboard, assign the citizen pickup to the driver.
+5. In the driver dashboard, push location updates and change the pickup status.
+6. Return to the citizen dashboard and confirm the assigned driver and live route updates appear.
+
+### OTP note for local testing
+
+- OTP verification is required before registration succeeds.
+- For a complete local sign-up flow, configure the Twilio environment variables in `backend/.env` so the verification code is delivered by SMS.
+
 ## Planning and Progress Tracking
 
 All project planning, architecture notes, dependency-safe task selection, generated file lists, and progress updates are maintained exclusively in `tasks.json`.
