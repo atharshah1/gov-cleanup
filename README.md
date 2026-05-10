@@ -1,23 +1,43 @@
 # EcoSync
 
-EcoSync is a full-stack smart municipal waste management platform for coordinating citizens, collection drivers, and municipal administrators.
+EcoSync is a full-stack municipal waste operations platform for three roles:
 
-## Project Overview
+- Citizen: schedule pickups, submit complaints, track assigned driver, earn rewards
+- Driver: manage assigned pickups, update status, push live location
+- Admin: view analytics, monitor system activity, assign pickups to drivers
 
-The platform is designed to support verified household onboarding, OTP-based registration, electricity bill verification, pickup scheduling, complaint workflows, rewards, route visibility, and analytics for cleaner municipal operations.
+## Architecture
 
-## Tech Stack
+- Frontend: React + Vite + TypeScript + Tailwind + React Router + Zustand + React Query
+- Backend: FastAPI + SQLAlchemy + Alembic + JWT auth
+- Database: PostgreSQL
+- Maps and tracking: Leaflet + OpenStreetMap + WebSocket updates
 
-- **Frontend:** React, Vite, TypeScript, TailwindCSS, React Router, Zustand, React Query, Axios, Framer Motion, Recharts
-- **Backend:** FastAPI, SQLAlchemy, Alembic, Pydantic, JWT authentication
-- **Database:** PostgreSQL
-- **Maps:** Leaflet with OpenStreetMap tiles for real pickup and driver tracking
-- **Notifications:** Twilio SMS integration for OTP delivery
-- **Analytics:** Pandas-powered backend analytics summary and CSV export
+## Repository Layout
 
-## Environment Variables
+- frontend: React application
+- backend: FastAPI service, database models, migrations, API routes
+- tasks.json: local planning and progress notes
 
-Create `backend/.env` before running the API:
+## Prerequisites
+
+- Node.js 18+
+- npm 9+
+- Python 3.11+
+- PostgreSQL 14+
+
+## 1) Backend Setup
+
+From project root:
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create backend/.env (or copy from backend/.env.example if available):
 
 ```env
 APP_NAME="EcoSync API"
@@ -32,98 +52,122 @@ TWILIO_AUTH_TOKEN=""
 TWILIO_FROM_PHONE=""
 ```
 
-## Frontend Setup
+Run migrations and start API:
 
 ```bash
-cd frontend
-npm install
-npm run lint
-npm run dev
-```
-
-The frontend runs on <http://localhost:5173> by default.
-
-## Backend Setup
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # create manually if the example is not present yet
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-The API runs on <http://localhost:8000> by default.
+Backend URL: <http://localhost:8000>
 
-## Database Setup
+## 2) Frontend Setup
 
-1. Create a PostgreSQL database named `ecosync`.
-2. Configure `DATABASE_URL` in `backend/.env`.
-3. Run Alembic migrations from the `backend` directory.
+From project root:
 
-The schema includes `users`, `pickup_requests`, `complaints`, `rewards`, `drivers`, `notifications`, `otp_challenges`, and `driver_locations`.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Integrated Feature Notes
+Frontend URL: <http://localhost:5173>
 
-- **Database persistence:** auth, pickups, complaints, rewards, notifications, OTPs, and live tracking events are persisted with SQLAlchemy and PostgreSQL.
-- **Live tracking:** driver location updates are available through REST endpoints and `/api/v1/tracking/pickups/{pickup_id}/ws`.
-- **Maps:** the frontend dashboards render OpenStreetMap maps with Leaflet for pickup destinations and live driver positions.
-- **Uploads:** electricity bills can be uploaded through `/api/v1/uploads/electricity-bills` and are served from `/uploads/...`.
-- **Analytics:** `/api/v1/analytics/summary` returns aggregated metrics and `/api/v1/analytics/export.csv` exports persisted pickup data.
+Optional checks:
 
-## API Documentation
+```bash
+npm run lint
+```
 
-When the backend server is running, FastAPI exposes interactive documentation at:
+## 3) Role-Based Frontend Routes
+
+EcoSync now enforces role-safe navigation and protected dashboards.
+
+Public routes:
+
+- /login (redirects to /login/citizen)
+- /login/citizen
+- /login/driver
+- /login/admin
+- /signup (redirects to /signup/citizen)
+- /signup/citizen
+- /signup/driver
+- /signup/admin
+
+Protected routes (authentication required):
+
+- /dashboard/user (citizen only)
+- /dashboard/driver (driver only)
+- /dashboard/admin (admin only)
+- /features (authenticated users)
+
+Route behavior:
+
+- Unauthenticated user attempting a dashboard route is redirected to /login.
+- Authenticated user attempting another role's dashboard is redirected to their own dashboard.
+- Dashboard header navigation only shows the logged-in user's own dashboard link plus Features.
+
+Legacy compatibility:
+
+- /register and /register/:role redirect to /signup and /signup/:role.
+
+## 4) Signup and Login Flows by Role
+
+Signup requirements differ by role:
+
+- Citizen: OTP required, household address required, electricity bill upload required
+- Driver: OTP required, vehicle number required, no household bill upload required
+- Admin: OTP not required, no household bill upload required
+
+Citizen flow:
+
+1. Open /signup/citizen.
+2. Fill profile details, request OTP, verify OTP.
+3. Complete signup and auto-login.
+4. User lands on /dashboard/user.
+
+Driver flow:
+
+1. Open /signup/driver.
+2. Fill profile, address, and vehicle number, then verify OTP.
+3. Complete signup and auto-login.
+4. User lands on /dashboard/driver.
+
+Admin flow:
+
+1. Open /signup/admin.
+2. Fill profile and office/contact address.
+3. Complete signup and auto-login without OTP.
+4. User lands on /dashboard/admin.
+
+Role login safety:
+
+- If a user signs in through a role-specific portal (for example /login/admin) with a different role account, the frontend blocks the sign-in and shows an error.
+
+## 5) API Documentation
+
+When backend is running:
 
 - Swagger UI: <http://localhost:8000/docs>
 - ReDoc: <http://localhost:8000/redoc>
 
-## Creating Admin, Driver, and Citizen Accounts for Flow Testing
+## 6) End-to-End Local Test Scenario
 
-Use the frontend at <http://localhost:5173/register> to create each role, or call the auth endpoints directly from Swagger.
+1. Signup/login as citizen and create a pickup request.
+2. Signup/login as driver.
+3. Signup/login as admin.
+4. From admin dashboard, assign pickup to driver.
+5. From driver dashboard, post location updates and status changes.
+6. Return to citizen dashboard and confirm live updates are visible.
 
-1. Request an OTP for the phone number you want to use.
-2. Verify the OTP for that phone number.
-3. Complete registration with the target role.
-4. Sign in at <http://localhost:5173/login> and confirm you land on the matching dashboard.
+## 7) Troubleshooting
 
-### Citizen test account
-
-- Choose the `Citizen` role on the registration page.
-- Fill in name, phone, password, address, and optionally upload an electricity bill.
-- After login, you should land on `/dashboard/user`.
-- Use the citizen dashboard to schedule a pickup and watch live driver tracking after assignment.
-
-### Driver test account
-
-- Choose the `Driver` role on the registration page.
-- Fill in the standard registration fields and provide a `vehicle number` because driver registration requires it.
-- After login, you should land on `/dashboard/driver`.
-- Use the driver dashboard to open an assigned pickup, update status, and send live location updates.
-
-### Admin test account
-
-- Choose the `Admin` role on the registration page.
-- Fill in the standard registration fields and complete OTP verification.
-- After login, you should land on `/dashboard/admin`.
-- Use the admin dashboard to review analytics, view available drivers, and assign citizen pickups to a driver.
-
-### Recommended end-to-end flow check
-
-1. Create and log in with a citizen account, then schedule a pickup.
-2. Create and log in with a driver account.
-3. Create and log in with an admin account.
-4. In the admin dashboard, assign the citizen pickup to the driver.
-5. In the driver dashboard, push location updates and change the pickup status.
-6. Return to the citizen dashboard and confirm the assigned driver and live route updates appear.
-
-### OTP note for local testing
-
-- OTP verification is required before registration succeeds.
-- For a complete local sign-up flow, configure the Twilio environment variables in `backend/.env` so the verification code is delivered by SMS.
-
-## Planning and Progress Tracking
-
-All project planning, architecture notes, dependency-safe task selection, generated file lists, and progress updates are maintained exclusively in `tasks.json`.
+- OTP not delivered:
+	- Verify Twilio variables in backend/.env.
+	- Check backend logs for OTP provider errors.
+- 401/403 API errors:
+	- Confirm backend is running and CORS FRONTEND_ORIGIN is correct.
+	- Re-login to refresh local JWT state.
+- Dashboard access mismatch:
+	- Confirm signed-in role and open matching route.
+	- Use role-specific login portal to avoid confusion.

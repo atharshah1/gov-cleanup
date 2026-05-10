@@ -195,7 +195,7 @@ export function UserDashboard() {
       ) : (
         <EmptyState title="No pickups yet" description="Schedule your first pickup to unlock live tracking and analytics." />
       )}
-      <p className="text-sm text-slate-500">Need a driver account to push live coordinates? <Link className="font-bold text-emerald-700" to="/register">Create one here.</Link></p>
+      <p className="text-sm text-slate-500">Need a driver account to push live coordinates? <Link className="font-bold text-emerald-700" to="/signup/driver">Create one here.</Link></p>
     </section>
   );
 }

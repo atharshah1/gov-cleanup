@@ -25,7 +25,8 @@ class AuthService:
             existing_by_email = session.scalar(select(User).where(User.email == payload.email))
             if existing_by_email is not None:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered")
-        if not otp_service.is_verified(session, payload.phone):
+        requires_otp = payload.role != UserRole.ADMIN
+        if requires_otp and not otp_service.is_verified(session, payload.phone):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number must be OTP verified before registration")
         if payload.role == UserRole.DRIVER and not payload.vehicle_number:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Driver registrations require a vehicle number")
@@ -39,14 +40,15 @@ class AuthService:
             role=payload.role,
             address=payload.address,
             verified=True,
-            electricity_bill_path=payload.electricity_bill_path,
+            electricity_bill_path=payload.electricity_bill_path if payload.role == UserRole.CITIZEN else None,
             created_at=now,
             updated_at=now,
         )
         session.add(user)
         try:
             session.flush()
-            user.household_id = f"ECO-{now.year}-{user.id:06d}"
+            if payload.role == UserRole.CITIZEN:
+                user.household_id = f"ECO-{now.year}-{user.id:06d}"
             if payload.role == UserRole.DRIVER and payload.vehicle_number:
                 session.add(
                     Driver(

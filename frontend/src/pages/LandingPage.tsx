@@ -1,6 +1,7 @@
 import { ArrowRight, BarChart3, MapPinned, Recycle, ShieldCheck, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { StatCard } from '../components/StatCard';
+import { loginPathForRole, roleLabel, signupPathForRole, USER_ROLES } from '../lib/navigation';
 
 const metrics = [
   { label: 'Smart pickups', value: '24/7', icon: Truck, tone: 'green' as const },
@@ -22,7 +23,7 @@ export function LandingPage() {
             </div>
             <span className="text-xl font-bold tracking-tight">EcoSync</span>
           </Link>
-          <Link className="hidden rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-civic-mint sm:inline-flex" to="/login">
+          <Link className="hidden rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-civic-mint sm:inline-flex" to="/login/citizen">
             Municipal login
           </Link>
         </nav>
@@ -39,12 +40,27 @@ export function LandingPage() {
               EcoSync connects citizens, drivers, and municipal administrators with verified households, pickup scheduling, complaints, rewards, route visibility, and analytics.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Link className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 font-semibold text-white shadow-xl transition hover:-translate-y-0.5" to="/register">
+              <Link className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 font-semibold text-white shadow-xl transition hover:-translate-y-0.5" to="/signup/citizen">
                 Register household <ArrowRight className="h-5 w-5" />
               </Link>
-              <Link className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/15 px-6 py-3 font-semibold text-white backdrop-blur transition hover:bg-white/25" to="/dashboard/user">
-                View dashboard
+              <Link className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/15 px-6 py-3 font-semibold text-white backdrop-blur transition hover:bg-white/25" to="/login">
+                Sign in
               </Link>
+            </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {USER_ROLES.map((role) => (
+                <article key={role} className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-cyan-100">{roleLabel(role)}</p>
+                  <div className="mt-3 flex gap-2">
+                    <Link className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-900" to={loginPathForRole(role)}>
+                      Login
+                    </Link>
+                    <Link className="rounded-full border border-white/40 px-3 py-1.5 text-xs font-bold text-white" to={signupPathForRole(role)}>
+                      Sign up
+                    </Link>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
 

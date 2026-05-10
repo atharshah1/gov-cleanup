@@ -1,18 +1,23 @@
 import { Recycle } from 'lucide-react';
+import { useMemo } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { dashboardPathForRole, roleLabel } from '../lib/navigation';
 import { useSessionStore } from '../store/session';
-
-const links = [
-  { to: '/dashboard/user', label: 'Citizen' },
-  { to: '/dashboard/driver', label: 'Driver' },
-  { to: '/dashboard/admin', label: 'Admin' },
-  { to: '/features', label: 'Features' }
-];
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const user = useSessionStore((state) => state.user);
   const clearSession = useSessionStore((state) => state.clearSession);
+  const links = useMemo(() => {
+    if (!user) {
+      return [];
+    }
+
+    return [
+      { to: dashboardPathForRole(user.role), label: roleLabel(user.role) },
+      { to: '/features', label: 'Features' }
+    ];
+  }, [user]);
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6 lg:px-10">
@@ -43,7 +48,7 @@ export function DashboardLayout() {
               ))}
             </nav>
             <div className="flex gap-2">
-              <button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-700" type="button" onClick={() => navigate('/login')}>
+              <button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-700" type="button" onClick={() => navigate(user ? `/login/${user.role}` : '/login')}>
                 {user ? 'Switch account' : 'Login'}
               </button>
               {user ? (
