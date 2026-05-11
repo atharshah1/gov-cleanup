@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { dashboardPathForRole } from './lib/navigation';
 import { DashboardLayout } from './layouts/DashboardLayout';
@@ -22,7 +23,7 @@ function RequireAuth() {
   return <Outlet />;
 }
 
-function RequireRole({ role, children }: { role: UserRole; children: JSX.Element }) {
+function RequireRole({ role, children }: { role: UserRole; children: ReactElement }) {
   const user = useSessionStore((state) => state.user);
 
   if (!user) {
