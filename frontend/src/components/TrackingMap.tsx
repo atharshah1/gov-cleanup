@@ -20,10 +20,17 @@ export function TrackingMap({
   history = [],
   heightClassName = 'h-80'
 }: TrackingMapProps) {
-  const center = driverLocation ? toTuple(driverLocation) : pickupLocation ? toTuple(pickupLocation) : DEFAULT_CENTER;
+  const latestHistoryPoint = history.at(-1);
+  const center = driverLocation
+    ? toTuple(driverLocation)
+    : pickupLocation
+      ? toTuple(pickupLocation)
+      : latestHistoryPoint
+        ? toTuple(latestHistoryPoint)
+        : DEFAULT_CENTER;
   const path = history.map(toTuple);
 
-  if (!pickupLocation && !driverLocation) {
+  if (!pickupLocation && !driverLocation && path.length === 0) {
     return (
       <div className={`grid place-items-center rounded-[1.5rem] bg-slate-100 text-sm text-slate-500 ${heightClassName}`}>
         Coordinates will appear here once a pickup is scheduled and tracking begins.

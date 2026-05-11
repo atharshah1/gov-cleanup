@@ -123,6 +123,11 @@ export function UserDashboard() {
   const latestDriverLocation = liveLocation ?? trackingQuery.data?.at(-1) ?? null;
   const rewardPoints = rewards.reduce((total, reward) => total + reward.points, 0);
   const pickupLocation: Coordinates | null = activePickup?.coordinates ?? null;
+  const trackingHistory = [...(trackingQuery.data ?? [])];
+
+  if (liveLocation) {
+    trackingHistory.push(liveLocation);
+  }
 
   return (
     <section className="grid gap-6">
@@ -172,7 +177,7 @@ export function UserDashboard() {
             <TrackingMap
               pickupLocation={pickupLocation}
               driverLocation={latestDriverLocation ? { latitude: latestDriverLocation.latitude, longitude: latestDriverLocation.longitude } : null}
-              history={(trackingQuery.data ?? []).map((item) => ({ latitude: item.latitude, longitude: item.longitude }))}
+              history={trackingHistory.map((item) => ({ latitude: item.latitude, longitude: item.longitude }))}
             />
           </div>
         </article>
