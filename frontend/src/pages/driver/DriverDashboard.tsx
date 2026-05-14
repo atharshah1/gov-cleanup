@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LocateFixed, MapPinned, Navigation, PackageCheck, Truck } from 'lucide-react';
 import { EmptyState } from '../../components/EmptyState';
@@ -18,6 +18,8 @@ export function DriverDashboard() {
   const [note, setNote] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoTracking, setAutoTracking] = useState(false);
+  const autoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const pickupsQuery = useQuery({
     queryKey: ['driver-pickups', user?.driver_id],
@@ -39,6 +41,50 @@ export function DriverDashboard() {
       setStatus(pickupsQuery.data[0].status);
     }
   }, [pickupsQuery.data, selectedPickupId]);
+
+  // Auto-tracking: send location every 10 seconds when enabled
+  useEffect(() => {
+    if (autoIntervalRef.current) {
+      clearInterval(autoIntervalRef.current);
+      autoIntervalRef.current = null;
+    }
+    if (!autoTracking || !selectedPickup || !user?.driver_id) {
+      return;
+    }
+    const sendGps = () => {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
+        setLatitude(lat);
+        setLongitude(lng);
+        void api.post(`/tracking/pickups/${selectedPickup.id}/locations`, {
+          driver_id: user.driver_id,
+          latitude: Number(lat),
+          longitude: Number(lng),
+          status,
+          note: note || null
+        }).then(async () => {
+          setMessage('Auto-tracking: location sent.');
+          setError(null);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['driver-tracking', selectedPickup.id] }),
+            queryClient.invalidateQueries({ queryKey: ['driver-pickups', user.driver_id] })
+          ]);
+        }).catch((err: unknown) => {
+          setError(err instanceof Error ? err.message : 'Auto-tracking: unable to send location.');
+        });
+      });
+    };
+    sendGps(); // send immediately on start
+    autoIntervalRef.current = setInterval(sendGps, 10_000);
+    return () => {
+      if (autoIntervalRef.current) {
+        clearInterval(autoIntervalRef.current);
+        autoIntervalRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTracking, selectedPickup?.id, user?.driver_id]);
 
   const trackingQuery = useQuery({
     queryKey: ['driver-tracking', selectedPickup?.id],
@@ -171,6 +217,14 @@ export function DriverDashboard() {
                   Save status
                 </button>
               </div>
+              <button
+                className={`rounded-2xl px-5 py-3 font-bold text-white ${autoTracking ? 'bg-rose-600' : 'bg-blue-600'}`}
+                type="button"
+                onClick={() => setAutoTracking((current) => !current)}
+              >
+                <LocateFixed className="mr-2 inline h-4 w-4" />
+                {autoTracking ? 'Stop auto-tracking' : 'Start auto-tracking (every 10s)'}
+              </button>
             </div>
           ) : null}
           {message ? <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</p> : null}

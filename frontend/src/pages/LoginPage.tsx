@@ -14,6 +14,7 @@ export function LoginPage() {
   const hasInvalidRolePath = Boolean(roleParam && !expectedRole);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,8 +69,29 @@ export function LoginPage() {
         </h1>
         <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">Phone<input className="rounded-2xl border border-slate-200 px-4 py-3" placeholder="+1 555 0100" value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
-          <label className="grid gap-2 text-sm font-semibold text-slate-700">Password<input className="rounded-2xl border border-slate-200 px-4 py-3" type="password" placeholder="••••••••" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
-          <button className="rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-60" type="submit" disabled={isSubmitting}>Login</button>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Password
+            <div className="relative">
+              <input
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                onClick={() => setShowPassword((current) => !current)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </label>
+          <div className="flex items-center justify-between gap-4">
+            <Link className="text-sm font-bold text-emerald-700" to="/forgot-password">Forgot password?</Link>
+            <button className="rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-60" type="submit" disabled={isSubmitting}>Login</button>
+          </div>
         </form>
         {errorMessage ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{errorMessage}</p> : null}
         <p className="mt-6 text-sm text-slate-600">

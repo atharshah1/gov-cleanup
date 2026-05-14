@@ -6,6 +6,7 @@ import type { UserRole } from './lib/types';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { DriverDashboard } from './pages/driver/DriverDashboard';
 import { FeatureModulesPage } from './pages/FeatureModulesPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -58,6 +59,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Navigate to="/login/citizen" replace />} />
       <Route path="/login/:role" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/signup" element={<Navigate to="/signup/citizen" replace />} />
       <Route path="/signup/:role" element={<RegisterPage />} />
       <Route path="/register" element={<LegacyRegisterRedirect />} />

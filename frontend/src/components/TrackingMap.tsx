@@ -78,7 +78,8 @@ export function TrackingMap({
         </div>
       }
     >
-      <MapContainer center={center} zoom={13} className={`${heightClassName} rounded-[1.5rem]`}>
+      <div className={`${heightClassName} rounded-[1.5rem] overflow-hidden`}>
+      <MapContainer center={center} zoom={13} style={{ width: '100%', height: '100%' }}>
         <ChangeView center={center} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -96,6 +97,7 @@ export function TrackingMap({
         ) : null}
         {path.length > 1 ? <Polyline positions={path} pathOptions={{ color: '#2563eb', weight: 4 }} /> : null}
       </MapContainer>
+      </div>
     </MapErrorBoundary>
   );
 }

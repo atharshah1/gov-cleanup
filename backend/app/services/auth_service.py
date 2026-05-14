@@ -82,6 +82,20 @@ class AuthService:
             user.updated_at = datetime.now(timezone.utc)
             session.flush()
 
+    def reset_password(self, session: Session, phone: str, code: str, new_password: str) -> TokenResponse:
+        if not otp_service.verify_code(session, phone, code):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired OTP")
+        self.mark_phone_verified(session, phone)
+        user = session.scalar(select(User).options(selectinload(User.driver_profile)).where(User.phone == phone))
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        user.password_hash = hash_password(new_password)
+        user.updated_at = datetime.now(timezone.utc)
+        session.commit()
+        read_model = self._to_read_model(user)
+        token = create_access_token(subject=str(read_model.id), claims={"role": read_model.role.value, "phone": read_model.phone})
+        return TokenResponse(access_token=token, user=read_model)
+
     @staticmethod
     def _to_read_model(user: User) -> UserRead:
         return UserRead(
