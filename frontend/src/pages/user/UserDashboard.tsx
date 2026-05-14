@@ -168,13 +168,16 @@ export function UserDashboard() {
               className="rounded-2xl bg-slate-200 px-5 py-3 font-bold text-slate-900 sm:col-span-2"
               type="button"
               onClick={() => {
-                navigator.geolocation.getCurrentPosition((position) => {
-                  setSchedule((current) => ({
-                    ...current,
-                    latitude: position.coords.latitude.toFixed(6),
-                    longitude: position.coords.longitude.toFixed(6)
-                  }));
-                });
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    setSchedule((current) => ({
+                      ...current,
+                      latitude: position.coords.latitude.toFixed(6),
+                      longitude: position.coords.longitude.toFixed(6)
+                    }));
+                  },
+                  () => setError('Unable to get your location. Please allow location access or enter coordinates manually.')
+                );
               }}
             >
               <LocateFixed className="mr-2 inline h-4 w-4" />Use my location

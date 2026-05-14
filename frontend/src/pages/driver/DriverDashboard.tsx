@@ -73,6 +73,9 @@ export function DriverDashboard() {
         }).catch((err: unknown) => {
           setError(err instanceof Error ? err.message : 'Auto-tracking: unable to send location.');
         });
+      }, () => {
+        setError('Auto-tracking: location access denied or unavailable. Please allow location permissions.');
+        setAutoTracking(false);
       });
     };
     sendGps(); // send immediately on start
@@ -199,10 +202,13 @@ export function DriverDashboard() {
                   className="rounded-2xl bg-slate-200 px-5 py-3 font-bold text-slate-900"
                   type="button"
                   onClick={() => {
-                    navigator.geolocation.getCurrentPosition((position) => {
-                      setLatitude(position.coords.latitude.toFixed(6));
-                      setLongitude(position.coords.longitude.toFixed(6));
-                    });
+                    navigator.geolocation.getCurrentPosition(
+                      (position) => {
+                        setLatitude(position.coords.latitude.toFixed(6));
+                        setLongitude(position.coords.longitude.toFixed(6));
+                      },
+                      () => setError('Unable to get your location. Please allow location access.')
+                    );
                   }}
                 >
                   <LocateFixed className="mr-2 inline h-4 w-4" />Use my location
